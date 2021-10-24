@@ -16,7 +16,7 @@ SET_OF_ALL_ITEMS = {
     "sheep",
 }
 
-WORLD_ITEM_HAPPINESS = {
+MARKET_ITEM_HAPPINESS_DISTRUBUTION_DICT = {
     "apple": Poisson(6),
     "horse": Poisson(10),
     "shovel": Poisson(8),
@@ -28,9 +28,9 @@ WORLD_ITEM_HAPPINESS = {
     "sheep": Poisson(10),
 }
 
-ROLE_DISTRIBUTION = {"farmer": 0.3, "herder": 0.3, "manufacturer": 0.4}
+MARKET_ROLE_DISTRIBUTION = {"farmer": 0.3, "herder": 0.3, "manufacturer": 0.4}
 
-WORLD_ROLE_PRODUCTION = {
+MARKET_ROLE_PRODUCTION_DISTRIBUTION_DICT = {
     "farmer": {"apple": Poisson(6), "oil": Poisson(6.5)},
     "herder": {"horse": Poisson(5), "cow": Poisson(4.5), "sheep": Poisson(6)},
     "manufacturer": {
@@ -41,14 +41,14 @@ WORLD_ROLE_PRODUCTION = {
     },
 }
 
+NUM_HUMANS = 10
+
 market = Market(
-    humans=[
-        Human(id_, ROLE_DISTRIBUTION, WORLD_ROLE_PRODUCTION, WORLD_ITEM_HAPPINESS)
-        for id_ in [uuid4() for i in range(10)]
-    ]
+    NUM_HUMANS,
+    MARKET_ROLE_DISTRIBUTION,
+    MARKET_ROLE_PRODUCTION_DISTRIBUTION_DICT,
+    MARKET_ITEM_HAPPINESS_DISTRUBUTION_DICT,
 )
 
 for human in market.humans:
     human.generate_item_subsets()
-
-import ipdb; ipdb.set_trace()

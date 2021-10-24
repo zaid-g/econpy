@@ -1,66 +1,95 @@
 from probability import sample_item_from_dictionary
+from uuid import uuid4
 from misc_functions import deepcopy
 
 
 class Human:
     def __init__(
-        self, uid, role_distribution, world_role_production, world_item_happiness
+        self,
+        uid,
+        market_role_distribution,
+        market_role_production_distribution_dict,
+        market_item_happiness_distribution_dict,
     ):
         self.uid = uid
-        self.assign_role_and_initialize_items(role_distribution, world_role_production)
-        self.compute_personal_item_happiness(world_item_happiness)
-        self.compute_happiness()  # self.happiness computed
+        self.role = self.assign_role(market_role_distribution)
+        self.personal_production = self.compute_personal_production(
+            market_role_production_distribution_dict
+        )
+        self.items = {}
+        self.personal_item_happiness_dict = self.compute_personal_item_happiness(
+            market_item_happiness_distribution_dict
+        )
 
-    def compute_personal_item_happiness(self, world_item_happiness):
-        """call once when initializing object"""
-        self.personal_item_happiness = {}
-        for item in world_item_happiness:
-            self.personal_item_happiness[item] = world_item_happiness[item].sample()
-
-    def compute_happiness(self):
-        """compute happiness based on how many and the variety of items
-        the human has
-
-        """
-        self.happiness = 0
-        for item in self.items:
-            self.happiness += (
-                self.items[item] * self.personal_item_happiness[item] ** 0.5
-            )
-
-    def assign_role_and_initialize_items(
-        self, role_distribution, world_role_production
-    ):
-        """assigns a role to the human and, based on the world production
-        rate (and role), initializes (by sampling), how many of each item o has.
+    def assign_role(self, market_role_distribution):
+        """based on market role distribution, sample this specific human's role
 
         Args:
-            role_distribution (dict): TODO
-            world_role_production (TODO): TODO
+            market_role_distribution (TODO): TODO
 
         Returns: TODO
 
         """
-        self.role = sample_item_from_dictionary(role_distribution)
-        self.items = {
-            item: world_role_production[self.role][item].sample_discrete()
-            for item in world_role_production[self.role]
-        }
+        role = sample_item_from_dictionary(market_role_distribution)
+        return role
 
-    def project_happiness(self, items: dict):
-        """compute happiness that would result from having dictionary of items
+    def compute_personal_production(self, market_role_production_distribution_dict):
+        """Based on market production rates for each role, sample this specific human's
+        production rate based on o's role
 
         Args:
-            items (dict): dictionary (item_name: number)
+            market_role_production_distribution_dict (TODO): TODO
 
         Returns: TODO
 
         """
+        personal_production = {}
+        for item in market_role_production_distribution_dict[self.role]:
+            personal_production[item] = market_role_production_distribution_dict[
+                self.role
+            ][item].sample()
+        return personal_production
+
+    def compute_personal_item_happiness(self, market_item_happiness_distribution_dict):
+        """Based on distribution of how happy each item makes humans, sample how happy each
+        item makes this specific human
+
+        Args:
+            market_item_happiness_distribution_dict (TODO): TODO
+
+        Returns: personal item happiness dictionary object
+
+        """
+        personal_item_happiness_dict = {}
+        for item in market_item_happiness_distribution_dict:
+            personal_item_happiness_dict[
+                item
+            ] = market_item_happiness_distribution_dict[item].sample()
+        return personal_item_happiness_dict
+
+    def compute_happiness(self, items=None):
+        """compute happiness based on how many and the variety of items"""
         happiness = 0
-        print("computed ")
+        if items is None:
+            items = self.items
         for item in items:
-            happiness += items[item] * self.personal_item_happiness[item] ** 0.5
+            happiness += (
+                self.items[item] * self.personal_item_happiness_dict[item] ** 0.5
+            )
         return happiness
+
+    def produce_items(self):
+        """produces a certain number of items based on the personal production
+        rate
+
+        Returns: TODO
+
+        """
+        if self.items == {}:
+            self.items = self.personal_production
+        else:
+            for item in self.items:
+                self.items[item] += self.personal_production[item]
 
     def generate_item_subsets(self):
         items = deepcopy(self.items)
@@ -98,19 +127,45 @@ class LimitTransaction:
 
 
 class Market:
-    def __init__(self, humans):
-        self.humans = humans
-        self.compute_happiness()  # self.happiness computed
+    def __init__(
+        self,
+        num_humans,
+        market_role_distribution,
+        market_role_production_distribution_dict,
+        market_item_happiness_distribution_dict,
+    ):
+        self.market_role_distribution = market_role_distribution
+        self.market_role_production_distribution_dict = (
+            market_role_production_distribution_dict
+        )
+        self.market_item_happiness_distribution_dict = (
+            market_item_happiness_distribution_dict
+        )
+        self.humans = self.init_humans(num_humans)
+        self.happiness = self.compute_happiness()
+
+    def init_humans(self, num_humans):
+        """initialize humans in marketplace based on market settings"""
+        humans = [
+            Human(
+                uuid4(),
+                self.market_role_distribution,
+                self.market_role_production_distribution_dict,
+                self.market_item_happiness_distribution_dict,
+            )
+            for i in range(num_humans)
+        ]
+        return humans
 
     def get_number_of_humans(self):
         return len(self.humans)
 
     def compute_happiness(self):
         """for each human in market, add the happiness"""
-        self.happiness = 0
+        happiness = 0
         for human in self.humans:
-            human.compute_happiness()
-            self.happiness += human.happiness
+            happiness += human.compute_happiness()
+        return happiness
 
     def run_purchase_process_greedy(self, human_index):
         """lets the human identified by human_index interact and transact
@@ -126,9 +181,4 @@ class Market:
 
         """
         human = self.humans[human_index]
-        other_humans = [
-            human for human in self.humans if human != human
-        ]
-
-
-        import ipdb; ipdb.set_trace()
+        other_humans = [human for human in self.humans if human != human]
