@@ -17,7 +17,7 @@ class Human:
             market_role_production_distribution_dict
         )
         self.items = {}
-        self.personal_item_happiness_dict = self.compute_personal_item_happiness(
+        self.personal_item_happiness_dict = self.compute_personal_item_happiness_dict(
             market_item_happiness_distribution_dict
         )
 
@@ -50,7 +50,7 @@ class Human:
             ][item].sample()
         return personal_production
 
-    def compute_personal_item_happiness(self, market_item_happiness_distribution_dict):
+    def compute_personal_item_happiness_dict(self, market_item_happiness_distribution_dict):
         """Based on distribution of how happy each item makes humans, sample how happy each
         item makes this specific human
 

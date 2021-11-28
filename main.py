@@ -51,4 +51,5 @@ market = Market(
 )
 
 for human in market.humans:
+    human.produce_items()
     human.generate_item_subsets()
